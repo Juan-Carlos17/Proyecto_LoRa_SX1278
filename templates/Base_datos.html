@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datos Sensores</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            padding: 20px;
+        }
+        
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .button {
+            padding: 12px 24px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #45a049;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+            text-transform: uppercase;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+
+        td {
+            border-bottom: 1px solid #ddd;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        table {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* Buscador */
+        .search-container {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .search-input {
+            padding: 10px;
+            width: 50%;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Ajuste de la tabla para pantallas pequeñas */
+        @media (max-width: 768px) {
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            th, td {
+                padding: 10px 5px;
+                font-size: 12px;
+            }
+
+            .button {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+
+            .search-input {
+                width: 80%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2>Visualización de Datos de Sensores</h2>
+
+    <!-- Buscador -->
+    <div class="search-container">
+        <input type="text" id="buscar" class="search-input" onkeyup="buscarTabla()" placeholder="Buscar en la tabla...">
+    </div>
+
+    <div class="button-container">
+        <a href="/descargar_csv" class="button">Descargar CSV</a>
+    </div>
+
+    <table id="tabla_sensores">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Voltaje (V)</th>
+                <th>Corriente (A)</th>
+                <th>Potencia (W)</th>
+                <th>Energía (kWh)</th>
+                <th>Frecuencia (Hz)</th>
+                <th>Factor de Potencia</th>
+                <th>Fecha y Hora</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in datos %}
+            <tr>
+                <td>{{ row[0] }}</td>
+                <td>{{ row[1] }}</td>
+                <td>{{ row[2] }}</td>
+                <td>{{ row[3] }}</td>
+                <td>{{ row[4] }}</td>
+                <td>{{ row[5] }}</td>
+                <td>{{ row[6] }}</td>
+                <td>{{ row[7] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        // Función para filtrar la tabla
+        function buscarTabla() {
+            // Obtener el valor del input
+            let input = document.getElementById("buscar");
+            let filter = input.value.toLowerCase();
+            
+            // Obtener la tabla y las filas
+            let table = document.getElementById("tabla_sensores");
+            let rows = table.getElementsByTagName("tr");
+
+            // Iterar sobre todas las filas, excepto la cabecera (índice 0)
+            for (let i = 1; i < rows.length; i++) {
+                let cells = rows[i].getElementsByTagName("td");
+                let rowContainsFilter = false;
+
+                // Iterar sobre todas las celdas de la fila
+                for (let j = 0; j < cells.length; j++) {
+                    if (cells[j]) {
+                        let cellValue = cells[j].textContent || cells[j].innerText;
+                        if (cellValue.toLowerCase().indexOf(filter) > -1) {
+                            rowContainsFilter = true;
+                            break;
+                        }
+                    }
+                }
+
+                // Mostrar u ocultar la fila en función del filtro
+                rows[i].style.display = rowContainsFilter ? "" : "none";
+            }
+        }
+    </script>
+</body>
+</html>

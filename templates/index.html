@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Visualización en Tiempo Real</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2e3b4e;
+            color: #ffffff;
+            text-align: center;
+        }
+        h1, h2 {
+            color: #00d1b2;
+        }
+        #ultimas_lecturas {
+            background-color: #1c2833;
+            padding: 20px;
+            margin: 20px auto;
+            width: 90%;
+            border-radius: 10px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+            background-color: #34495e;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        canvas {
+            background-color: #34495e;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Panel de Visualización de Sensores</h1>
+    
+    <!-- Recuadro con las últimas 10 lecturas -->
+    <div id="ultimas_lecturas">
+        <h2>Últimas 10 Lecturas</h2>
+        <ul id="lecturas">
+            <!-- Aquí se llenarán las lecturas -->
+        </ul>
+    </div>
+
+    <!-- Gráficos -->
+    <h2>Gráficos de Sensores</h2>
+    
+    <canvas id="grafico_voltaje" width="800" height="400"></canvas>
+    <canvas id="grafico_corriente" width="800" height="400"></canvas>
+    <canvas id="grafico_potencia" width="800" height="400"></canvas>
+    <canvas id="grafico_energia" width="800" height="400"></canvas>
+    <canvas id="grafico_frecuencia" width="800" height="400"></canvas>
+    <canvas id="grafico_pf" width="800" height="400"></canvas>
+
+    <script>
+        // Configuración común para los gráficos
+        const commonOptions = {
+            responsive: true,
+            scales: {
+                x: { reverse: true },
+                y: { beginAtZero: true }
+            },
+            elements: {
+                line: {
+                    tension: 0.01  // Reduce la suavidad de las líneas
+                },
+                point: {
+                    radius: 3  // Aumenta el tamaño de los puntos
+                }
+            }
+        };
+
+        let voltajeChart = new Chart(document.getElementById('grafico_voltaje').getContext('2d'), {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'Voltaje (V)', borderColor: 'blue', data: [] }] },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { reverse: true },
+                    y: { beginAtZero: true, min: 200, max: 250 }
+                }
+            }
+        });
+
+        let corrienteChart = new Chart(document.getElementById('grafico_corriente').getContext('2d'), {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'Corriente (A)', borderColor: 'green', data: [] }] },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { reverse: true },
+                    y: { beginAtZero: true, min: 0, max: 10 }
+                }
+            }
+        });
+
+        let potenciaChart = new Chart(document.getElementById('grafico_potencia').getContext('2d'), {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'Potencia (W)', borderColor: 'red', data: [] }] },
+            options: commonOptions
+        });
+
+        let energiaChart = new Chart(document.getElementById('grafico_energia').getContext('2d'), {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'Energía (Wh)', borderColor: 'purple', data: [] }] },
+            options: commonOptions
+        });
+
+        let frecuenciaChart = new Chart(document.getElementById('grafico_frecuencia').getContext('2d'), {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'Frecuencia (Hz)', borderColor: 'orange', data: [] }] },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { reverse: true },
+                    y: { beginAtZero: true, min: 40, max: 60 }
+                }
+            }
+        });
+
+        let pfChart = new Chart(document.getElementById('grafico_pf').getContext('2d'), {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'Factor de Potencia (PF)', borderColor: 'yellow', data: [] }] },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { reverse: true },
+                    y: { beginAtZero: true, min: 0, max: 1 }
+                }
+            }
+        });
+
+        // Función para actualizar los gráficos y el listado de lecturas
+        function updateGraphs() {
+            fetch('/ultimas_lecturas')
+                .then(response => response.json())
+                .then(data => {
+                    // Actualizamos los gráficos con los nuevos datos
+                    voltajeChart.data.labels = data.labels;
+                    voltajeChart.data.datasets[0].data = data.voltaje;
+                    voltajeChart.update();
+
+                    corrienteChart.data.labels = data.labels;
+                    corrienteChart.data.datasets[0].data = data.corriente;
+                    corrienteChart.update();
+
+                    potenciaChart.data.labels = data.labels;
+                    potenciaChart.data.datasets[0].data = data.potencia;
+                    potenciaChart.update();
+
+                    energiaChart.data.labels = data.labels;
+                    energiaChart.data.datasets[0].data = data.energia;
+                    energiaChart.update();
+
+                    frecuenciaChart.data.labels = data.labels;
+                    frecuenciaChart.data.datasets[0].data = data.frecuencia;
+                    frecuenciaChart.update();
+
+                    pfChart.data.labels = data.labels;
+                    pfChart.data.datasets[0].data = data.pf;
+                    pfChart.update();
+
+                    // Mostrar las últimas 10 lecturas
+                    const ul = document.getElementById('lecturas');
+                    ul.innerHTML = '';  // Limpiar el listado
+                    for (let i = 0; i < data.labels.length; i++) {
+                        const li = document.createElement('li');
+                        li.innerHTML = `Fecha: ${data.labels[i]} - Voltaje: ${data.voltaje[i]} V, Corriente: ${data.corriente[i]} A, Potencia: ${data.potencia[i]} W, Energía: ${data.energia[i]} Wh, Frecuencia: ${data.frecuencia[i]} Hz, PF: ${data.pf[i]}`;
+                        ul.appendChild(li);
+                    }
+                })
+                .catch(error => console.error('Error al obtener los datos:', error));
+        }
+
+        // Actualizamos los gráficos cada 5 segundos
+        setInterval(updateGraphs, 5000);
+        updateGraphs();  // Llamada inicial
+    </script>
+</body>
+</html>
