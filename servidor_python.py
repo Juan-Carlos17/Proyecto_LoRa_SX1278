@@ -1,42 +1,12 @@
 from flask import Flask, request, jsonify, render_template, make_response
-import os
-import pg8000
+import requests
 from datetime import datetime
 import pytz
 import csv
 import io
+import os
 
 app = Flask(__name__)
-
-# Configuración de la base de datos usando variables de entorno
-# Asegúrate de configurar correctamente la variable DATABASE_URL en Render con el formato correcto
-DATABASE_URL = os.getenv('DATABASE_URL','https://proyecto-lora-sx1278.onrender.com')
-
-# Función para parsear la URL de la base de datos
-def get_db_connection():
-    # Parsear la URL de conexión
-    # Formato de DATABASE_URL: postgres://usuario:contraseña@host:puerto/nombre_bd
-    if DATABASE_URL:
-        try:
-            db_info = DATABASE_URL.split("://")[1]
-            user_pass, host_db = db_info.split("@")
-            user, password = user_pass.split(":")
-            host, database = host_db.split("/")
-            port = host.split(":")[1] if ":" in host else 5432
-            host = host.split(":")[0]
-
-            return {
-                "user": user,
-                "password": password,
-                "host": host,
-                "port": int(port),
-                "database": database
-            }
-        except Exception as e:
-            print(f"Error al parsear DATABASE_URL: {e}")
-            raise ValueError("DATABASE_URL no está configurada correctamente")
-    else:
-        raise ValueError("DATABASE_URL no está configurada")
 
 # Ruta para la página principal
 @app.route('/')
@@ -56,70 +26,42 @@ def recibir_datos():
         frecuencia = data.get('frecuencia')
         pf = data.get('pf')
 
-        # Insertar los datos en la base de datos
-        insertar_datos(voltaje, corriente, potencia, energia, frecuencia, pf)
+        # Aquí podrías agregar la lógica para enviar los datos al web service de Render si es necesario
 
         return jsonify({"message": "Datos recibidos correctamente"}), 200
     except Exception as e:
         print(f"Error al recibir los datos: {e}")
         return jsonify({"message": "Error al recibir los datos"}), 500
 
-# Función para insertar datos en la base de datos PostgreSQL
-def insertar_datos(voltaje, corriente, potencia, energia, frecuencia, pf):
-    try:
-        db_config = get_db_connection()
-        conn = pg8000.connect(**db_config)
-        cursor = conn.cursor()
-        cursor.execute('''CREATE TABLE IF NOT EXISTS datos (
-                            id SERIAL PRIMARY KEY,
-                            voltaje REAL,
-                            corriente REAL,
-                            potencia REAL,
-                            energia REAL,
-                            frecuencia REAL,
-                            pf REAL,
-                            timestamp TEXT
-                        )''')
-        
-        # Obtener la hora actual con zona horaria
-        time_zone = pytz.timezone('America/Santiago')
-        time_now = datetime.now(time_zone).strftime('%Y-%m-%d %H:%M:%S')
-
-        # Insertar los datos
-        cursor.execute('''INSERT INTO datos (voltaje, corriente, potencia, energia, frecuencia, pf, timestamp)
-                          VALUES (%s, %s, %s, %s, %s, %s, %s)''',
-                       (voltaje, corriente, potencia, energia, frecuencia, pf, time_now))
-
-        conn.commit()
-        cursor.close()
-        conn.close()
-        print("Datos insertados correctamente")
-    except Exception as e:
-        print(f"Error al insertar datos: {e}")
-
-# Ruta para ver las últimas 10 lecturas
+# Ruta para ver las últimas 10 lecturas, obteniendo los datos desde el web service en Render
 @app.route('/ultimas_lecturas', methods=['GET'])
 def ultimas_lecturas():
     try:
-        db_config = get_db_connection()
-        conn = pg8000.connect(**db_config)
-        cursor = conn.cursor()
-        cursor.execute("SELECT voltaje, corriente, potencia, energia, frecuencia, pf, timestamp FROM datos ORDER BY id DESC LIMIT 10")
-        rows = cursor.fetchall()
-        cursor.close()
-        conn.close()
-
-        ultimas_lecturas = {
-            'labels': [row[6] for row in rows],
-            'voltaje': [row[0] for row in rows],
-            'corriente': [row[1] for row in rows],
-            'potencia': [row[2] for row in rows],
-            'energia': [row[3] for row in rows],
-            'frecuencia': [row[4] for row in rows],
-            'pf': [row[5] for row in rows]
-        }
-
-        return jsonify(ultimas_lecturas), 200
+        # URL del web service en Render que proporciona los datos
+        web_service_url = "https://proyecto-lora-sx1278.onrender.com"
+        
+        # Realizar la solicitud GET al web service
+        response = requests.get(web_service_url)
+        
+        # Verificar si la solicitud fue exitosa
+        if response.status_code == 200:
+            # Parsear los datos recibidos en formato JSON
+            datos = response.json()
+            
+            ultimas_lecturas = {
+                'labels': [dato['timestamp'] for dato in datos],
+                'voltaje': [dato['voltaje'] for dato in datos],
+                'corriente': [dato['corriente'] for dato in datos],
+                'potencia': [dato['potencia'] for dato in datos],
+                'energia': [dato['energia'] for dato in datos],
+                'frecuencia': [dato['frecuencia'] for dato in datos],
+                'pf': [dato['pf'] for dato in datos]
+            }
+            
+            return jsonify(ultimas_lecturas), 200
+        else:
+            print(f"Error al obtener las últimas lecturas desde el web service: {response.status_code}")
+            return jsonify({"message": "Error al obtener las últimas lecturas"}), 500
     except Exception as e:
         print(f"Error al obtener las últimas lecturas: {e}")
         return jsonify({"message": "Error al obtener las últimas lecturas"}), 500
@@ -128,26 +70,33 @@ def ultimas_lecturas():
 @app.route('/descargar_csv', methods=['GET'])
 def descargar_csv():
     try:
-        db_config = get_db_connection()
-        conn = pg8000.connect(**db_config)
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM datos")
-        rows = cursor.fetchall()
-        cursor.close()
-        conn.close()
+        # URL del web service en Render que proporciona los datos
+        web_service_url = "https://proyecto-lora-sx1278.onrender.com/tu_ruta_para_obtener_datos"
+        
+        # Realizar la solicitud GET al web service
+        response = requests.get(web_service_url)
+        
+        # Verificar si la solicitud fue exitosa
+        if response.status_code == 200:
+            # Parsear los datos recibidos en formato JSON
+            datos = response.json()
+            
+            # Crear el archivo CSV en memoria
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(['Timestamp', 'Voltaje (V)', 'Corriente (A)', 'Potencia (W)', 'Energía (kWh)', 'Frecuencia (Hz)', 'Factor de Potencia'])
+            for dato in datos:
+                writer.writerow([dato['timestamp'], dato['voltaje'], dato['corriente'], dato['potencia'], dato['energia'], dato['frecuencia'], dato['pf']])
 
-        # Crear el archivo CSV en memoria
-        output = io.StringIO()
-        writer = csv.writer(output)
-        writer.writerow(['ID', 'Voltaje (V)', 'Corriente (A)', 'Potencia (W)', 'Energía (kWh)', 'Frecuencia (Hz)', 'Factor de Potencia', 'Fecha y Hora'])
-        writer.writerows(rows)
-
-        # Crear la respuesta
-        output.seek(0)
-        return make_response(output.getvalue(), 200, {
-            'Content-Type': 'text/csv',
-            'Content-Disposition': 'attachment; filename=datos_sensores.csv',
-        })
+            # Crear la respuesta
+            output.seek(0)
+            return make_response(output.getvalue(), 200, {
+                'Content-Type': 'text/csv',
+                'Content-Disposition': 'attachment; filename=datos_sensores.csv',
+            })
+        else:
+            print(f"Error al descargar CSV desde el web service: {response.status_code}")
+            return jsonify({"message": "Error al descargar CSV"}), 500
     except Exception as e:
         print(f"Error al descargar CSV: {e}")
         return jsonify({"message": "Error al descargar CSV"}), 500
