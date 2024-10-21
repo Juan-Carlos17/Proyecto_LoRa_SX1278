@@ -9,24 +9,32 @@ import io
 app = Flask(__name__)
 
 # Configuración de la base de datos usando variables de entorno
-DATABASE_URL = os.getenv('DATABASE_URL', 'url')
+# Asegúrate de configurar correctamente la variable DATABASE_URL en Render con el formato correcto
+DATABASE_URL = os.getenv('DATABASE_URL','https://proyecto-lora-sx1278.onrender.com')
 
 # Función para parsear la URL de la base de datos
 def get_db_connection():
     # Parsear la URL de conexión
-    # Formato de DATABASE_URL: postgres://usuario:contraseña@localhost:5432/nombre_bd
+    # Formato de DATABASE_URL: postgres://usuario:contraseña@host:puerto/nombre_bd
     if DATABASE_URL:
-        db_info = DATABASE_URL.split("://")[1]
-        user_pass, host_db = db_info.split("@")
-        user, password = user_pass.split(":")
-        host, database = host_db.split("/")
-        return {
-            "user": user,
-            "password": password,
-            "host": host.split(":")[0],
-            "port": int(host.split(":")[1]),
-            "database": database
-        }
+        try:
+            db_info = DATABASE_URL.split("://")[1]
+            user_pass, host_db = db_info.split("@")
+            user, password = user_pass.split(":")
+            host, database = host_db.split("/")
+            port = host.split(":")[1] if ":" in host else 5432
+            host = host.split(":")[0]
+
+            return {
+                "user": user,
+                "password": password,
+                "host": host,
+                "port": int(port),
+                "database": database
+            }
+        except Exception as e:
+            print(f"Error al parsear DATABASE_URL: {e}")
+            raise ValueError("DATABASE_URL no está configurada correctamente")
     else:
         raise ValueError("DATABASE_URL no está configurada")
 
