@@ -38,7 +38,7 @@ def recibir_datos():
 def ultimas_lecturas():
     try:
         # URL del web service en Render que proporciona los datos
-        web_service_url = "https://api.render.com/deploy/srv-cs86ne5svqrc73bl4ddg?key=_kLpsQtmLhg"
+        web_service_url = "https://proyecto-lora-sx1278.onrender.com"
         
         # Realizar la solicitud GET al web service
         response = requests.get(web_service_url)
@@ -71,7 +71,7 @@ def ultimas_lecturas():
 def descargar_csv():
     try:
         # URL del web service en Render que proporciona los datos
-        web_service_url = "https://proyecto-lora-sx1278.onrender.com/tu_ruta_para_obtener_datos"
+        web_service_url = "https://proyecto-lora-sx1278.onrender.com"
         
         # Realizar la solicitud GET al web service
         response = requests.get(web_service_url)
