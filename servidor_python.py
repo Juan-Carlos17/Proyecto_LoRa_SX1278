@@ -34,7 +34,7 @@ def recibir_datos():
         return jsonify({"message": "Error al recibir los datos"}), 500
 
 # Ruta para ver las últimas 10 lecturas, obteniendo los datos desde el web service en Render
-@app.route('/ultimas_lecturas', methods=['GET'])
+@app.route('/ultimas_lecturas', methods=['POST'])
 def ultimas_lecturas():
     try:
         # URL del web service en Render que proporciona los datos
