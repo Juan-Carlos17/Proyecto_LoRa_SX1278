@@ -67,7 +67,7 @@ def ultimas_lecturas():
         return jsonify({"message": "Error al obtener las últimas lecturas"}), 500
 
 # Ruta para descargar datos en CSV
-@app.route('/descargar_csv', methods=['GET'])
+@app.route('/descargar_csv', methods=['POST'])
 def descargar_csv():
     try:
         # URL del web service en Render que proporciona los datos
