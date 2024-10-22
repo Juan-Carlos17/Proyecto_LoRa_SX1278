@@ -38,7 +38,7 @@ def recibir_datos():
 def ultimas_lecturas():
     try:
         # URL del web service en Render que proporciona los datos
-        web_service_url = "https://proyecto-lora-sx1278.onrender.com"
+        web_service_url = "https://proyecto-lora-sx1278.onrender.com/ultimas_lecturas"
         
         # Realizar la solicitud GET al web service
         response = requests.get(web_service_url)
