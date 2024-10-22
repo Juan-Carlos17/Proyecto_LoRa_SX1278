@@ -38,15 +38,22 @@ def recibir_datos():
 def ultimas_lecturas():
     try:
         # URL del web service en Render que proporciona los datos
-        web_service_url = "https://proyecto-lora-sx1278.onrender.com/ultimas_lecturas"
+        web_service_url = "https://proyecto-lora-sx1278.onrender.com"
         
-        # Realizar la solicitud GET al web service
-        response = requests.get(web_service_url)
+        # Verificar el método de la solicitud y ajustar la solicitud al web service en consecuencia
+        if request.method == 'POST':
+            response = requests.post(web_service_url, json=request.json)
+        else:
+            response = requests.get(web_service_url)
         
         # Verificar si la solicitud fue exitosa
         if response.status_code == 200:
-            # Parsear los datos recibidos en formato JSON
-            datos = response.json()
+            try:
+                # Parsear los datos recibidos en formato JSON
+                datos = response.json()
+            except ValueError:
+                print("La respuesta no es un JSON válido")
+                return jsonify({"message": "La respuesta no es un JSON válido"}), 500
             
             ultimas_lecturas = {
                 'labels': [dato['timestamp'] for dato in datos],
@@ -71,15 +78,19 @@ def ultimas_lecturas():
 def descargar_csv():
     try:
         # URL del web service en Render que proporciona los datos
-        web_service_url = "https://proyecto-lora-sx1278.onrender.com"
+        web_service_url = "https://proyecto-lora-sx1278.onrender.com/ultimas_lecturas"
         
         # Realizar la solicitud GET al web service
         response = requests.get(web_service_url)
         
         # Verificar si la solicitud fue exitosa
         if response.status_code == 200:
-            # Parsear los datos recibidos en formato JSON
-            datos = response.json()
+            try:
+                # Parsear los datos recibidos en formato JSON
+                datos = response.json()
+            except ValueError:
+                print("La respuesta no es un JSON válido")
+                return jsonify({"message": "La respuesta no es un JSON válido"}), 500
             
             # Crear el archivo CSV en memoria
             output = io.StringIO()
